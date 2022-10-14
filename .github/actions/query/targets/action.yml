@@ -1,0 +1,45 @@
+name: "Generate Please Targets matrix"
+description: "Generates a please targets matrix via please query"
+inputs:
+  includes:
+    required: false
+    description: The Please labels to include from the results.
+    default: ""
+  excludes:
+    required: false
+    description: The Please labels to exclude from the results.
+    default: ""
+  query_path:
+    required: false
+    description: The Please query path to search for targets.
+    default: "//..."
+outputs:
+  please_targets:
+    description: "The matrix of Please targets discovered"
+    value: ${{ steps.please_targets.outputs.PLEASE_TARGETS }}
+runs:
+  using: "composite"
+  steps:
+
+  - id: tool
+    name: Build Tool
+    shell: bash
+    run: |-
+      cd "${{ github.action_path }}/../../../../"
+      ./pleasew -p -v2 build "//github/query/targets:targets"
+      tool_plz_out="$(./pleasew query output "//github/query/targets:targets")"
+      echo "TOOL=${{ github.action_path }}/../../../../$tool_plz_out" >> $GITHUB_OUTPUT
+
+  - id: please_targets
+    name: Generate Please Targets
+    shell: bash
+    run: |-
+      ${{ steps.tool.outputs.TOOL }} \
+        --excludes="${{ inputs.excludes }}" \
+        --includes="${{ inputs.includes }}" \
+        --query_path="${{ inputs.query_path }}" \
+        --changes_file="plz-out/changes" \
+        --out_file="plz-out/github/please_targets.json"
+
+      please_targets_json="$(<plz-out/github/please_targets.json)"
+      echo "PLEASE_TARGETS=$please_targets_json" >> $GITHUB_OUTPUT

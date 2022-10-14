@@ -1,0 +1,52 @@
+name: Please Query Matrix
+
+on:
+  workflow_call:
+    inputs:
+      includes:
+        type: string
+        required: false
+        description: The Please labels to include from the results.
+        default: ""
+      excludes:
+        type: string
+        required: false
+        description: The Please labels to exclude from the results.
+        default: ""
+      query_path:
+        type: string
+        required: false
+        description: The Please target path to query for targets.
+        default: "//..."
+      changes_only:
+        type: boolean
+        required: false
+        default: false
+        description: Whether or not to only considered changed Please targets.
+
+    outputs:
+      targets:
+        description: "The matrix of Please Targets"
+        value: ${{ jobs.plz_query_matrix.outputs.please_targets }}
+
+jobs:
+  plz_query_matrix:
+    name: Please Query Matrix
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v3
+
+    - if: ${{ inputs.changes_only }}
+      id: please-changes
+      uses: VJftw/please-github/.github/actions/query/changes@main
+
+    - id: please_targets
+      uses: VJftw/please-github/.github/actions/query/targets@main
+      with:
+        includes: "${{ inputs.includes }}"
+        excludes: "${{ inputs.excludes }}"
+        query_path: "${{ inputs.query_path }}"
+
+    outputs:
+      please_targets: "${{ steps.please_targets.outputs.please_targets }}"

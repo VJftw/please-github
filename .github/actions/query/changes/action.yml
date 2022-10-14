@@ -1,0 +1,34 @@
+name: "Determine Please changes"
+description: "Generates a list of Please targets that have changed"
+inputs:
+  only_prs:
+    description: Only determine Please changes in PRs.
+    required: false
+    default: "true"
+  since:
+    description: |-
+      When to determine changes from. This is automatically determined if left
+      blank.
+    default: ""
+    required: false
+runs:
+  using: "composite"
+  steps:
+
+  - id: tool
+    name: Build Tool
+    shell: bash
+    run: |-
+      cd "${{ github.action_path }}/../../../../"
+      ./pleasew -p -v2 build "//github/query/changes:changes"
+      tool_plz_out="$(./pleasew query output "//github/query/changes:changes")"
+      echo "TOOL=${{ github.action_path }}/../../../../$tool_plz_out" >> $GITHUB_OUTPUT
+
+  - id: please_changes
+    name: Discover changes to Please targets
+    shell: bash
+    run: |-
+      ${{ steps.tool.outputs.TOOL }} \
+        --out_file="plz-out/changes" \
+        --since="${{ inputs.since }}" \
+        --only_prs="${{ inputs.only_prs }}"
