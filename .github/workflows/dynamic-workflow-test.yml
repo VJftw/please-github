@@ -1,0 +1,21 @@
+---
+# This workflow file will "generate" a new workflow at runtime and use it.
+name: "Dynamic Workflow PoC"
+on:
+  push:
+    branches:
+    - dynamic-workflow-test
+
+jobs:
+  generate_workflow:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: output workflow
+        run: |-
+          cp ./test/workflow.yaml ./.github/workflows/runtime-generated-workflow.yaml
+
+  execute_generated_workflow:
+    uses: ./.github/workflows/runtime-generated-workflow.yaml
